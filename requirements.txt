@@ -12,5 +12,5 @@ Pillow==10.0.0  # Python Imaging Library
 gunicorn==21.2.0  # WSGI HTTP Server for production
 
 # Barcode and Label Generation
-python-barcode==0.14.1  # Generate barcode images (Code128, EAN13, etc.)
+python-barcode==0.16.1  # Generate barcode images (Code128, EAN13, etc.)
 ReportLab==4.0.9  # Generate PDF documents for labels and reports
