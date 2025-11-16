@@ -1,0 +1,60 @@
+# Docker Compose configuration for DistRodog ERP
+# This sets up PostgreSQL and Django web server in isolated containers
+# No local PostgreSQL installation required!
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  # Runs in its own container with persistent data storage
+  db:
+    image: postgres:15  # Official PostgreSQL 15 image
+    container_name: distrodog_db
+    environment:
+      # Database credentials - change these for production
+      POSTGRES_DB: distrodog_erp
+      POSTGRES_USER: distrodog_user
+      POSTGRES_PASSWORD: secure_password_2025
+    ports:
+      - "5432:5432"  # Expose PostgreSQL port (optional, for debugging)
+    volumes:
+      # Persist database data even when container stops
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped  # Auto-restart on crash
+    healthcheck:
+      # Check if database is ready before starting web service
+      test: ["CMD-SHELL", "pg_isready -U distrodog_user -d distrodog_erp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Django Web Application Service
+  web:
+    build: .  # Build from Dockerfile in current directory
+    container_name: distrodog_web
+    # Wait for migrations, then start Django dev server
+    command: sh -c "python distrodog/manage.py migrate && python distrodog/manage.py runserver 0.0.0.0:8000"
+    volumes:
+      # Mount current directory for live code reloading during development
+      - .:/app
+      # Persist media uploads
+      - media_files:/app/media
+    ports:
+      - "8000:8000"  # Access Django at http://localhost:8000
+    depends_on:
+      db:
+        condition: service_healthy  # Wait for database to be ready
+    environment:
+      # Django settings - passed to container
+      - DEBUG=True
+      - DB_NAME=distrodog_erp
+      - DB_USER=distrodog_user
+      - DB_PASSWORD=secure_password_2025
+      - DB_HOST=db  # Use Docker service name as hostname
+      - DB_PORT=5432
+    restart: unless-stopped
+
+# Named volumes for data persistence
+volumes:
+  postgres_data:  # Database files persist here
+  media_files:    # User-uploaded images/files persist here
