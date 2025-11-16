@@ -1,0 +1,78 @@
+{% extends 'orders/base.html' %}
+
+{% block title %}Dashboard - Distrodog POS{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1 class="card-title">📊 Dashboard</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Orders</div>
+            <div class="stat-value">{{ stats.total_orders }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Orders Today</div>
+            <div class="stat-value">{{ stats.orders_today }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Pending Orders</div>
+            <div class="stat-value">{{ stats.pending_orders }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Products</div>
+            <div class="stat-value">{{ stats.products }}</div>
+        </div>
+    </div>
+    
+    <h2 class="card-title" style="margin-top: 2rem;">Recent Orders</h2>
+    {% if orders %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Status</th>
+                <th>Barcode</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td><strong>#{{ order.id }}</strong></td>
+                <td>{{ order.customer }}</td>
+                <td>{{ order.product.name }}</td>
+                <td>{{ order.quantity }}</td>
+                <td>
+                    {% if order.status == 'new' %}
+                        <span class="badge badge-info">{{ order.get_status_display }}</span>
+                    {% elif order.status == 'processing' %}
+                        <span class="badge badge-warning">{{ order.get_status_display }}</span>
+                    {% elif order.status == 'delivered' %}
+                        <span class="badge badge-success">{{ order.get_status_display }}</span>
+                    {% elif order.status == 'cancelled' %}
+                        <span class="badge badge-danger">{{ order.get_status_display }}</span>
+                    {% else %}
+                        <span class="badge badge-info">{{ order.get_status_display }}</span>
+                    {% endif %}
+                </td>
+                <td><code>{{ order.barcode|truncatechars:15 }}</code></td>
+                <td><a href="{% url 'orders:order_detail' order.id %}" class="btn" style="padding: 0.5rem 1rem; font-size: 0.9rem;">View</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-warning">No orders yet. <a href="{% url 'orders:create_order' %}">Create one now</a></div>
+    {% endif %}
+    
+    <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+        <a href="{% url 'orders:order_list' %}" class="btn">View All Orders</a>
+        <a href="{% url 'orders:create_order' %}" class="btn btn-success">Create New Order</a>
+        <a href="{% url 'orders:barcode_scan' %}" class="btn btn-secondary">Scan Barcode</a>
+    </div>
+</div>
+{% endblock %}
