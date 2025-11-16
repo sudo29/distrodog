@@ -1,0 +1,99 @@
+{% extends 'orders/base.html' %}
+{% block title %}Orders List - Distrodog POS{% endblock %}
+{% block content %}
+<div class="card">
+  <h1 class="card-title">📋 Orders List</h1>
+  
+  <!-- Filters -->
+  <div style="margin: 1rem 0; display: flex; gap: 1rem; flex-wrap: wrap;">
+    <form method="GET" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <input type="text" name="search" placeholder="Search by customer, barcode, or product..." 
+             style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; flex: 1; min-width: 200px;"
+             value="{{ request.GET.search }}">
+      
+      <select name="status" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+        <option value="">All Statuses</option>
+        <option value="new" {% if selected_status == 'new' %}selected{% endif %}>New</option>
+        <option value="processing" {% if selected_status == 'processing' %}selected{% endif %}>Processing</option>
+        <option value="packed" {% if selected_status == 'packed' %}selected{% endif %}>Packed</option>
+        <option value="shipped" {% if selected_status == 'shipped' %}selected{% endif %}>Shipped</option>
+        <option value="delivered" {% if selected_status == 'delivered' %}selected{% endif %}>Delivered</option>
+        <option value="cancelled" {% if selected_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+      </select>
+      
+      <button type="submit" class="btn" style="padding: 0.5rem 1rem;">🔍 Filter</button>
+      <a href="{% url 'orders:order_list' %}" class="btn" style="padding: 0.5rem 1rem; background: #6c757d;">Clear</a>
+    </form>
+  </div>
+  
+  <!-- Orders Table -->
+  {% if orders %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Product</th>
+          <th>Qty</th>
+          <th>Status</th>
+          <th>Barcode</th>
+          <th>Created By</th>
+          <th>Date Created</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+          <tr style="border-bottom: 1px solid #eee;">
+            <td><strong>#{{ order.id }}</strong></td>
+            <td>{{ order.customer }}</td>
+            <td>{{ order.product.name }}</td>
+            <td>{{ order.quantity }}</td>
+            <td>
+              {% if order.status == 'new' %}
+                <span class="badge badge-info">{{ order.get_status_display }}</span>
+              {% elif order.status == 'processing' %}
+                <span class="badge badge-warning">{{ order.get_status_display }}</span>
+              {% elif order.status == 'packed' %}
+                <span class="badge badge-warning">{{ order.get_status_display }}</span>
+              {% elif order.status == 'shipped' %}
+                <span class="badge badge-secondary">{{ order.get_status_display }}</span>
+              {% elif order.status == 'delivered' %}
+                <span class="badge badge-success">{{ order.get_status_display }}</span>
+              {% elif order.status == 'cancelled' %}
+                <span class="badge badge-danger">{{ order.get_status_display }}</span>
+              {% else %}
+                <span class="badge badge-info">{{ order.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td><code style="background: #f5f5f5; padding: 0.2rem 0.4rem; border-radius: 3px;">{{ order.barcode|truncatechars:12 }}</code></td>
+            <td>{{ order.created_by.username }}</td>
+            <td>{{ order.created_at|date:"M d, H:i" }}</td>
+            <td>
+              <a href="{% url 'orders:order_detail' order.id %}" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">View</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+    <div style="margin-top: 1rem; text-align: center; color: #666;">
+      Showing {{ orders|length }} orders
+    </div>
+  {% else %}
+    <div class="alert alert-info" style="margin: 1rem 0;">
+      No orders found. 
+      {% if request.GET.search or request.GET.status %}
+        <a href="{% url 'orders:order_list' %}">Clear filters</a> or
+      {% endif %}
+      <a href="{% url 'orders:create_order' %}">create one now</a>
+    </div>
+  {% endif %}
+  
+  <!-- Action Buttons -->
+  <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+    <a href="{% url 'orders:dashboard' %}" class="btn" style="background: #6c757d;">← Back to Dashboard</a>
+    <a href="{% url 'orders:create_order' %}" class="btn btn-success">➕ Create New Order</a>
+  </div>
+</div>
+{% endblock %}
