@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Order, ImageAttachment, ScanLog
+from .models import Product, Order, ImageAttachment, ScanL, InventoryBatch, InventorySample, InventoryScanLog
 
 
 @admin.register(Product)
