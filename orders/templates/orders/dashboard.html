@@ -1,78 +1,164 @@
 {% extends 'orders/base.html' %}
-
 {% block title %}Dashboard - Distrodog POS{% endblock %}
-
 {% block content %}
 <div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center;">
     <h1 class="card-title">📊 Dashboard</h1>
-    
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-label">Total Orders</div>
-            <div class="stat-value">{{ stats.total_orders }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Orders Today</div>
-            <div class="stat-value">{{ stats.orders_today }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Pending Orders</div>
-            <div class="stat-value">{{ stats.pending_orders }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Products</div>
-            <div class="stat-value">{{ stats.products }}</div>
-        </div>
-    </div>
-    
-    <h2 class="card-title" style="margin-top: 2rem;">Recent Orders</h2>
-    {% if orders %}
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Order ID</th>
-                <th>Customer</th>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>Status</th>
-                <th>Barcode</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in orders %}
-            <tr>
-                <td><strong>#{{ order.id }}</strong></td>
-                <td>{{ order.customer }}</td>
-                <td>{{ order.product.name }}</td>
-                <td>{{ order.quantity }}</td>
-                <td>
-                    {% if order.status == 'new' %}
-                        <span class="badge badge-info">{{ order.get_status_display }}</span>
-                    {% elif order.status == 'processing' %}
-                        <span class="badge badge-warning">{{ order.get_status_display }}</span>
-                    {% elif order.status == 'delivered' %}
-                        <span class="badge badge-success">{{ order.get_status_display }}</span>
-                    {% elif order.status == 'cancelled' %}
-                        <span class="badge badge-danger">{{ order.get_status_display }}</span>
-                    {% else %}
-                        <span class="badge badge-info">{{ order.get_status_display }}</span>
-                    {% endif %}
-                </td>
-                <td><code>{{ order.barcode|truncatechars:15 }}</code></td>
-                <td><a href="{% url 'orders:order_detail' order.id %}" class="btn" style="padding: 0.5rem 1rem; font-size: 0.9rem;">View</a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <div class="alert alert-warning">No orders yet. <a href="{% url 'orders:create_order' %}">Create one now</a></div>
+    {% if user_role %}
+      <span style="background: #007bff; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem; text-transform: capitalize;">
+        Role: {{ user_role }}
+      </span>
     {% endif %}
-    
-    <div style="margin-top: 2rem; display: flex; gap: 1rem;">
-        <a href="{% url 'orders:order_list' %}" class="btn">View All Orders</a>
-        <a href="{% url 'orders:create_order' %}" class="btn btn-success">Create New Order</a>
-        <a href="{% url 'orders:barcode_scan' %}" class="btn btn-secondary">Scan Barcode</a>
+  </div>
+
+  <!-- Role-based welcome message -->
+  {% if user_role == 'admin' %}
+    <div class="alert alert-info" style="margin: 1rem 0;">
+      <strong>👤 Admin Panel:</strong> You have full access to all features and can manage users, view all orders, and modify system settings.
     </div>
+  {% elif user_role == 'manager' %}
+    <div class="alert alert-info" style="margin: 1rem 0;">
+      <strong>👤 Manager Access:</strong> You can view all orders, create new orders, update order status, and view reports.
+    </div>
+  {% elif user_role == 'operator' %}
+    <div class="alert alert-info" style="margin: 1rem 0;">
+      <strong>👤 Operator Access:</strong> You can create new orders and scan barcodes. Use the action buttons below to get started.
+    </div>
+  {% elif user_role == 'warehouse_staff' %}
+    <div class="alert alert-info" style="margin: 1rem 0;">
+      <strong>👤 Warehouse Staff:</strong> You can view and scan your own orders. Access is limited to orders you created.
+    </div>
+  {% endif %}
+
+  <!-- Statistics Grid (visible based on role) -->
+  <div class="stats-grid">
+    <!-- Total Orders - all roles can see -->
+    <div class="stat-card">
+      <div class="stat-label">Total Orders</div>
+      <div class="stat-value">{{ stats.total_orders }}</div>
+    </div>
+
+    <!-- Orders Today - all roles can see -->
+    <div class="stat-card">
+      <div class="stat-label">Orders Today</div>
+      <div class="stat-value">{{ stats.orders_today }}</div>
+    </div>
+
+    <!-- Pending Orders - managers and admins can see -->
+    {% if user_role in 'admin|manager' %}
+      <div class="stat-card">
+        <div class="stat-label">Pending Orders</div>
+        <div class="stat-value">{{ stats.pending_orders }}</div>
+      </div>
+    {% endif %}
+
+    <!-- Products - all roles can see -->
+    <div class="stat-card">
+      <div class="stat-label">Products</div>
+      <div class="stat-value">{{ stats.products }}</div>
+    </div>
+
+    <!-- Total Revenue - managers and admins can see -->
+    {% if user_role in 'admin|manager' and total_revenue %}
+      <div class="stat-card">
+        <div class="stat-label">Total Items Shipped</div>
+        <div class="stat-value">{{ total_revenue }}</div>
+      </div>
+    {% endif %}
+
+    <!-- Total Users - admins only -->
+    {% if user_role == 'admin' and total_users %}
+      <div class="stat-card">
+        <div class="stat-label">Active Users</div>
+        <div class="stat-value">{{ total_users }}</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Recent Orders Section -->
+  <h2 class="card-title" style="margin-top: 2rem;">
+    {% if user_role == 'warehouse_staff' %}
+      My Orders
+    {% else %}
+      Recent Orders
+    {% endif %}
+  </h2>
+
+  {% if orders %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Product</th>
+          <th>Qty</th>
+          <th>Status</th>
+          <th>Barcode</th>
+          {% if user_role != 'warehouse_staff' %}
+            <th>Created By</th>
+          {% endif %}
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+          <tr>
+            <td><strong>#{{ order.id }}</strong></td>
+            <td>{{ order.customer }}</td>
+            <td>{{ order.product.name }}</td>
+            <td>{{ order.quantity }}</td>
+            <td>
+              {% if order.status == 'new' %}
+                <span class="badge badge-info">{{ order.get_status_display }}</span>
+              {% elif order.status == 'processing' %}
+                <span class="badge badge-warning">{{ order.get_status_display }}</span>
+              {% elif order.status == 'packed' %}
+                <span class="badge badge-warning">{{ order.get_status_display }}</span>
+              {% elif order.status == 'shipped' %}
+                <span class="badge badge-secondary">{{ order.get_status_display }}</span>
+              {% elif order.status == 'delivered' %}
+                <span class="badge badge-success">{{ order.get_status_display }}</span>
+              {% elif order.status == 'cancelled' %}
+                <span class="badge badge-danger">{{ order.get_status_display }}</span>
+              {% else %}
+                <span class="badge badge-info">{{ order.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td><code>{{ order.barcode|truncatechars:15 }}</code></td>
+            {% if user_role != 'warehouse_staff' %}
+              <td>{{ order.created_by.username }}</td>
+            {% endif %}
+            <td><a href="{% url 'orders:order_detail' order.id %}" class="btn" style="padding: 0.5rem 1rem; font-size: 0.9rem;">View</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="alert alert-warning">
+      No orders yet. 
+      {% if user_role in 'admin|manager|operator' %}
+        <a href="{% url 'orders:create_order' %}">Create one now</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <!-- Action Buttons (role-based visibility) -->
+  <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+    {% if user_role in 'admin|manager' %}
+      <a href="{% url 'orders:order_list' %}" class="btn">📋 View All Orders</a>
+    {% endif %}
+
+    {% if user_role in 'admin|manager|operator' %}
+      <a href="{% url 'orders:create_order' %}" class="btn btn-success">➕ Create New Order</a>
+    {% endif %}
+
+    {% if user_role in 'admin|manager|operator|warehouse_staff' %}
+      <a href="{% url 'orders:barcode_scan' %}" class="btn btn-secondary">🔍 Scan Barcode</a>
+    {% endif %}
+
+    {% if user_role == 'admin' %}
+      <a href="/admin/" class="btn" style="background: #6c757d;">⚙️ Django Admin</a>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}
