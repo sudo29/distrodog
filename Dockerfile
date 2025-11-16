@@ -6,12 +6,12 @@ WORKDIR /app
 
 # Install system dependencies needed for PostgreSQL and Pillow (image processing)
 RUN apt-get update && apt-get install -y \
-    postgresql-client \  # For database operations
-    libpq-dev \         # PostgreSQL development headers
-    gcc \               # C compiler for some Python packages
-    libjpeg-dev \       # JPEG support for Pillow
-    zlib1g-dev \        # PNG support for Pillow
-    && rm -rf /var/lib/apt/lists/*  # Clean up to reduce image size
+    postgresql-client \
+    libpq-dev \
+    gcc \
+    libjpeg-dev \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
 COPY requirements.txt .
@@ -27,5 +27,5 @@ RUN mkdir -p /app/media
 EXPOSE 8000
 
 # Default command (overridden in docker-compose.yml)
-# Note: manage.py is in distrodog/manage.py subdirectory
-CMD ["python", "distrodog/manage.py", "runserver", "0.0.0.0:8000"]
+# Note: manage.py is in root directory
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
