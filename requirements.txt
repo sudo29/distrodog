@@ -1,16 +1,6 @@
-# Django and Database Dependencies
-Django==4.2.13
-psycopg2-binary==2.9.9  # PostgreSQL adapter for Python
-
-# Environment Configuration
-python-dotenv==1.0.0  # Load environment variables from .env
-
-# Image Processing
-Pillow==10.0.0  # Python Imaging Library
-
-# Production Server
-gunicorn==21.2.0  # WSGI HTTP Server for production
-
-# Barcode and Label Generation
-python-barcode==0.16.1  # Generate barcode images (Code128, EAN13, etc.)
-ReportLab==4.0.9  # Generate PDF documents for labels and reports
+Django>=4.2,<5.0
+psycopg2-binary>=2.9
+Pillow>=10.0
+python-barcode>=0.15
+reportlab>=4.0
+django-extensions>=3.2
