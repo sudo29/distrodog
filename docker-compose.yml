@@ -33,7 +33,7 @@ services:
     build: .  # Build from Dockerfile in current directory
     container_name: distrodog_web
     # Wait for migrations, then start Django dev server
-    command: sh -c "python distrodog/manage.py migrate && python distrodog/manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       # Mount current directory for live code reloading during development
       - .:/app
