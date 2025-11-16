@@ -7,6 +7,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     # Django admin interface
     path('admin/', admin.site.urls),
+        path('pos/', include('orders.urls')),
 ]
 
 # Serve media files in development
